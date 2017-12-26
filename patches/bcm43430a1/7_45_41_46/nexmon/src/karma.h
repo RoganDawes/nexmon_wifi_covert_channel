@@ -3,15 +3,6 @@
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
-/*
-#define MAME82_KARMA_PROBE_RESP	(1 << 0)
-#define MAME82_KARMA_ASSOC_RESP	(1 << 1)
-#define MAME82_KARMA_DEBUG		(1 << 2)
-#define MAME82_KARMA_BEACONING	(1 << 3)
-#define MAME82_ENABLE_OPTION(var, opt) ({ uint32 _opt = (opt); (var) |= _opt; })
-#define MAME82_DISABLE_OPTION(var, opt) ({ uint32 _opt = (opt); (var) &= ~_opt; })
-#define MAME82_IS_ENABLED_OPTION(var, opt) ({ uint32 _opt = (opt); (var) & _opt; })
-*/
 
 #define DOT11_MGMT_HDR_LEN	24              /* d11 management header length */
 #define	D11_PHY_HDR_LEN		6
@@ -65,6 +56,25 @@
 #define DOT11_MNG_SSID_ID	0
 
 
+
+/** De-auth frame */
+typedef struct dot11_deauth {
+        uint16                  fc;             // FC: should be 0x00c0
+        uint16                  dur;          // duration: should be 0x013a
+        struct ether_addr       da;             // DA: should be FF:FF:FF:FF:FF:FF
+        struct ether_addr       sa;             // SA: should be address of AP to immitade
+        struct ether_addr       bssid;          // BSSID: same as SA
+        uint16                  seq;            // seq should be created automatically
+        uint16                  reason;			// reason code for deauth
+} dot11_deauth_t;
+
+typedef struct mame82_deauth_arg {
+        struct ether_addr       da;             // DA: should be FF:FF:FF:FF:FF:FF
+        struct ether_addr       bssid;          // BSSID: SA should be the same
+        uint16                  reason;			// reason code for deauth
+} mame82_deauth_arg_t;
+
+
 /*** Custom structs ***/
 typedef struct ssid_list
 {
@@ -92,6 +102,8 @@ typedef struct ssid_list
 #define MAME82_IOCTL_ARG_TYPE_CLEAR_CUSTOM_SSIDS 9 //Delete all custom SSID (stop sending beacons), the default SSID used by hostapd always remains
 #define MAME82_IOCTL_ARG_TYPE_CLEAR_KARMA_SSIDS 10 //Delete all SSIDs added for spotted probe requests (stop sending beacons for them), the default SSID used by hostapd always remains
 #define MAME82_IOCTL_ARG_TYPE_SET_ENABLE_CUSTOM_BEACONS 11 //allow sending user specified beacons (not from probes)
+
+#define MAME82_IOCTL_ARG_TYPE_SEND_DEAUTH 20 //sends deauth, argument is a struct of type mame82_deauth_arg
 
 
 #define MAME82_IOCTL_ARG_TYPE_GET_CONFIG 100 //dump the config struct
@@ -251,3 +263,9 @@ typedef struct beacon_fixed_params
 	uint16 beacon_interval;
 	uint16 caps;
 } beacon_fixed_params_t;
+
+
+void print_mem(void* p, uint32 len);
+void send_beacons(struct wlc_info *wlc, wlc_bsscfg_t *bsscfg, beacon_fixed_params_t *beacon_template_head, uint8 *beacon_template_tail, uint beacon_template_tail_len, ssid_list_t *ssids);
+void* generate_deauth(wlc_info_t *wlc, const struct ether_addr *da, const struct ether_addr *bssid, uint16 reason_code, uint8 **pbody);
+

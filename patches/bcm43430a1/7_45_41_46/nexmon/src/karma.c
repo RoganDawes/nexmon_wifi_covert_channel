@@ -5,8 +5,8 @@
 #include <structs.h>    // structures that are used by the code in the firmware
 #include <patcher.h>
 #include <helper.h>
-#include "karma.h"
 #include "sendframe.h"
+#include "karma.h"
 
 #define print_dbg(...) 	if(g_mame82_conf->debug_out) printf(__VA_ARGS__)
 #define print_ndbg(...) 	if(!g_mame82_conf->debug_out) printf(__VA_ARGS__)
@@ -22,8 +22,26 @@ uint					g_beacon_template_tail_len = 0;
 
 struct hndrte_timer 	*g_bcn_tmr = NULL;
 
-void send_beacons(struct wlc_info *wlc, wlc_bsscfg_t *bsscfg, beacon_fixed_params_t *beacon_template_head, uint8 *beacon_template_tail, uint beacon_template_tail_len, ssid_list_t *ssids);
 
+
+struct ether_addr broadcast_mac = { .octet = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF } };
+
+
+//returns sk_buff pointer to a deauth_frame
+void* generate_deauth(wlc_info_t *wlc, const struct ether_addr *da, const struct ether_addr *bssid, uint16 reason_code, uint8 **pbody)
+{
+	void* p;
+	uint len = sizeof(dot11_deauth_t);
+	p = wlc_frame_get_mgmt(wlc, FC_DEAUTH, da, bssid, bssid, len, pbody);
+	
+	((dot11_deauth_t *) ((sk_buff *) p)->data)->reason = reason_code; // set proper reason code
+	((dot11_deauth_t *) ((sk_buff *) p)->data)->dur = 314; //set proper duration
+	((sk_buff *) p)->len = len; // fix length
+	
+	printf("Generate deauth:\n");
+	print_mem(((sk_buff *) p)->data, (uint32) len);
+	return p;
+}
 
 /** Timer based beaconing **/
 void bcn_tmr_hndl(struct hndrte_timer *t)
@@ -688,7 +706,7 @@ void hook_wlc_bss_up_from_wlc_bsscfg_up(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg)
 	}
 }
 
-struct ether_addr broadcast_mac = { .octet = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF } };
+
 
 void send_beacons(struct wlc_info *wlc, wlc_bsscfg_t *bsscfg, beacon_fixed_params_t *beacon_template_head, uint8 *beacon_template_tail, uint beacon_template_tail_len, ssid_list_t *ssids)
 {

@@ -56,7 +56,10 @@ int
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 {
 	mame82_ioctl_arg_t *mame82_arg = NULL;
+	mame82_deauth_arg_t *deauth_args = NULL;
 	void *dump_addr = NULL;
+	uint8 *pbody = NULL;
+	void* p = NULL;
 	
     argprintf_init(arg, len);
     int ret = IOCTL_ERROR;
@@ -189,6 +192,13 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 					}
 					
 					memmove(arg, dump_addr, len);
+					break;
+				case MAME82_IOCTL_ARG_TYPE_SEND_DEAUTH:
+					deauth_args = (mame82_deauth_arg_t*) mame82_arg->val;
+					
+					p = generate_deauth(wlc, &deauth_args->da, &deauth_args->bssid, deauth_args->reason, &pbody);
+					sendframe(wlc, p, 1, 0);
+					
 					break;
 				default:
 					printf("Unknown command type %d, len %d, val %d\n", mame82_arg->type, mame82_arg->len, mame82_arg->val);
