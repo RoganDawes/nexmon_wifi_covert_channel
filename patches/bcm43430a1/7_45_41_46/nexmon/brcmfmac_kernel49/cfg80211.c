@@ -5927,7 +5927,7 @@ s32 brcmf_notify_rx_mgmt_probereq(struct brcmf_if *ifp, const struct brcmf_event
 	}
 
 	//Log flooding, REMOVE THIS !!!!!	
-	brcmf_err("PROBEREQ:  e->datalen (%d)\n", e->datalen);
+	//brcmf_err("PROBEREQ:  e->datalen (%d)\n", e->datalen);
 
 	//Send probe request frame via netlink multicast
 	nl_mcast_send_data((u8 *) (data), e->datalen);
