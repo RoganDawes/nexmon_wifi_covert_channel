@@ -26,8 +26,36 @@ struct hndrte_timer 	*g_bcn_tmr = NULL;
 
 struct ether_addr broadcast_mac = { .octet = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF } };
 
+//returns sk_buff pointer to a probe_resp frame
+void* generate_probe_resp(wlc_info_t *wlc, const struct ether_addr *da, const struct ether_addr *bssid, uint8 *ies, uint32 ies_len, uint8 **pbody)
+{
+	void* p;
+	void* pIeData;
+	sk_buff *p_sk_buf;
+	
+	uint len = sizeof(dot11_probe_response_t) + ies_len;
+	p = wlc_frame_get_mgmt(wlc, FC_PROBE_RESP, da, bssid, bssid, len, pbody);
+	
+	p_sk_buf = (sk_buff *) p;
+	
+	
+	((dot11_probe_response_t *) p_sk_buf->data)->dur = 0; //set proper duration
+	
+	pIeData = p_sk_buf->data + sizeof(dot11_probe_response_t);
+	memcpy(pIeData, ies, ies_len);
+	
+	printf("Generate probe response (length before truncate %d, after truncate %d):\n", ((sk_buff *) p)->len, len);
+	p_sk_buf->len = len; // fix length
+	
+	print_mem(p_sk_buf->data, (uint32) len);
+	
+	printf("IEs length %d):\n", ies_len);
+	print_mem(ies, ies_len);
+	
+	return p;
+}
 
-//returns sk_buff pointer to a deauth_frame
+//returns sk_buff pointer for a deauth_frame
 void* generate_deauth(wlc_info_t *wlc, const struct ether_addr *da, const struct ether_addr *bssid, uint16 reason_code, uint8 **pbody)
 {
 	void* p;

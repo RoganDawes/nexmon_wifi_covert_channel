@@ -143,7 +143,12 @@ static void brcmf_fweh_handle_if_event(struct brcmf_pub *drvr,
 	brcmf_dbg(EVENT, "action: %u ifidx: %u bsscfgidx: %u flags: %u role: %u\n",
 		  ifevent->action, ifevent->ifidx, ifevent->bsscfgidx,
 		  ifevent->flags, ifevent->role);
-
+		  
+	
+	brcmf_err("EVENT: action: %u ifidx: %u bsscfgidx: %u flags: %u role: %u\n",
+		  ifevent->action, ifevent->ifidx, ifevent->bsscfgidx,
+		  ifevent->flags, ifevent->role);
+	
 	/* The P2P Device interface event must not be ignored contrary to what
 	 * firmware tells us. Older firmware uses p2p noif, with sta role.
 	 * This should be accepted when p2pdev_setup is ongoing. TDLS setup will
@@ -347,9 +352,16 @@ int brcmf_fweh_register(struct brcmf_pub *drvr, enum brcmf_fweh_event_code code,
 		brcmf_err("event code %d already registered\n", code);
 		return -ENOSPC;
 	}
+	
+	
+	
 	drvr->fweh.evt_handler[code] = handler;
 	brcmf_dbg(TRACE, "event handler registered for %s\n",
 		  brcmf_fweh_event_name(code));
+		  
+		brcmf_err("EVENT: event handler registered for %s\n",
+		  brcmf_fweh_event_name(code));
+
 	return 0;
 }
 

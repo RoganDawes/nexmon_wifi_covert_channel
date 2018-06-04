@@ -48,7 +48,6 @@
 #include "karma.h"
 
 uint32 mame82_opts = 0;
-
 extern mame82_config_t *g_mame82_conf;
 
 
@@ -57,6 +56,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 {
 	mame82_ioctl_arg_t *mame82_arg = NULL;
 	mame82_deauth_arg_t *deauth_args = NULL;
+	mame82_probe_resp_arg_t *probe_resp_args = NULL;
 	void *dump_addr = NULL;
 	uint8 *pbody = NULL;
 	void* p = NULL;
@@ -101,9 +101,10 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             }
             break;
 		case 666:
-			printf("666 (MaMe82) called, arg %x\n", *arg);
+			printf("666 (MaMe82) called, arg %d\n", *arg);
 		
 			mame82_arg = (mame82_ioctl_arg_t *) arg;
+			printf("ioctl arg len: %d\n", mame82_arg->len);
 			uint32 tmp = 0;
 			
 			switch(mame82_arg->type)
@@ -173,6 +174,8 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 					memcpy(arg, g_mame82_conf, sizeof(mame82_config_t));
 					break;
 				case MAME82_IOCTL_ARG_TYPE_GET_MEM:
+					//POSSIBLE ERROR: no memory allocated at the address pointed to by &tmp before memcpy
+				
 					//dump as many bytes as the buffer can hold of the address given as argument
 					memcpy(&tmp, mame82_arg->val, mame82_arg->len);
 					
@@ -197,6 +200,21 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 					deauth_args = (mame82_deauth_arg_t*) mame82_arg->val;
 					
 					p = generate_deauth(wlc, &deauth_args->da, &deauth_args->bssid, deauth_args->reason, &pbody);
+					sendframe(wlc, p, 1, 0);
+					
+					break; 
+				case MAME82_IOCTL_ARG_TYPE_SEND_PROBE_RESP:
+					probe_resp_args = (mame82_probe_resp_arg_t *) mame82_arg->val;
+	
+					//p = generate_probe_resp(wlc, &probe_resp_args->da, &probe_resp_args->bssid, (uint8 *) &probe_resp_args->ies, (mame82_arg->len - sizeof(probe_resp_args) + 1), &pbody);
+					p = generate_probe_resp(
+						wlc, 
+						&probe_resp_args->da, 
+						&probe_resp_args->bssid, 
+						(uint8 *) &probe_resp_args->ies, 
+						(mame82_arg->len - 2*sizeof(struct ether_addr)), 
+						&pbody
+					);
 					sendframe(wlc, p, 1, 0);
 					
 					break;

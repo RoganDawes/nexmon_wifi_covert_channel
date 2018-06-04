@@ -56,6 +56,25 @@
 #define DOT11_MNG_SSID_ID	0
 
 
+typedef struct beacon_fixed_params
+{
+	uint32 timestamp[2];
+	uint16 beacon_interval;
+	uint16 caps;
+} beacon_fixed_params_t;
+
+
+/** Probe response frame */
+typedef struct dot11_probe_response {
+        uint16                  fc;             // FC: should be FC_PROBE_RESP
+        uint16                  dur;          // duration: should be 0x0000
+        struct ether_addr       da;             // DA: should be FF:FF:FF:FF:FF:FF
+        struct ether_addr       sa;             // SA: should be address of AP to immitade
+        struct ether_addr       bssid;          // BSSID: same as SA
+        uint16                  seq;            // seq should be created automatically
+		beacon_fixed_params_t	fixed_params;
+} dot11_probe_response_t;
+
 
 /** De-auth frame */
 typedef struct dot11_deauth {
@@ -73,6 +92,13 @@ typedef struct mame82_deauth_arg {
         struct ether_addr       bssid;          // BSSID: SA should be the same
         uint16                  reason;			// reason code for deauth
 } mame82_deauth_arg_t;
+
+typedef struct mame82_probe_resp_arg {
+        struct ether_addr       da;             // DA: should be FF:FF:FF:FF:FF:FF
+        struct ether_addr       bssid;          // BSSID: SA should be the same
+		uint8 ies[1]; //Information Elements with variable length
+
+} mame82_probe_resp_arg_t;
 
 
 /*** Custom structs ***/
@@ -104,7 +130,7 @@ typedef struct ssid_list
 #define MAME82_IOCTL_ARG_TYPE_SET_ENABLE_CUSTOM_BEACONS 11 //allow sending user specified beacons (not from probes)
 
 #define MAME82_IOCTL_ARG_TYPE_SEND_DEAUTH 20 //sends deauth, argument is a struct of type mame82_deauth_arg
-
+#define MAME82_IOCTL_ARG_TYPE_SEND_PROBE_RESP 21
 
 #define MAME82_IOCTL_ARG_TYPE_GET_CONFIG 100 //dump the config struct
 #define MAME82_IOCTL_ARG_TYPE_GET_MEM 101 //dump the config struct
@@ -257,15 +283,8 @@ typedef struct dot11_management_header dot11_management_header_t;
 //						in case the monitor interface is up, but only the real AP interface has set its bsscfg to enable
 #define BSSCFG_AP_ENABLED(cfg)          (((cfg)->_ap) && ((cfg)->enable))
 
-typedef struct beacon_fixed_params
-{
-	uint32 timestamp[2];
-	uint16 beacon_interval;
-	uint16 caps;
-} beacon_fixed_params_t;
-
 
 void print_mem(void* p, uint32 len);
 void send_beacons(struct wlc_info *wlc, wlc_bsscfg_t *bsscfg, beacon_fixed_params_t *beacon_template_head, uint8 *beacon_template_tail, uint beacon_template_tail_len, ssid_list_t *ssids);
 void* generate_deauth(wlc_info_t *wlc, const struct ether_addr *da, const struct ether_addr *bssid, uint16 reason_code, uint8 **pbody);
-
+void* generate_probe_resp(wlc_info_t *wlc, const struct ether_addr *da, const struct ether_addr *bssid, uint8* ies, uint32 ies_len, uint8 **pbody);
