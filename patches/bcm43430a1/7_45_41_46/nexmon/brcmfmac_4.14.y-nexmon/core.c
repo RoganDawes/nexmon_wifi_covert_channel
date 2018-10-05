@@ -1351,8 +1351,8 @@ int __init brcmf_core_init(void)
 
 	/* MaMe82 init multicast netlink socket*/
 	nl_cfg_mcast.flags = NL_CFG_F_NONROOT_RECV;
-	nl_sock_mcast = netlink_kernel_create(&init_net, NETLINK_USERSOCK, &nl_cfg_mcast);
-	//nl_sock_mcast = netlink_kernel_create(&init_net, NETLINK_KOBJECT_UEVENT, &nl_cfg_mcast);
+	//nl_sock_mcast = netlink_kernel_create(&init_net, NETLINK_USERSOCK, &nl_cfg_mcast);
+	nl_sock_mcast = netlink_kernel_create(&init_net, NETLINK_KOBJECT_UEVENT, &nl_cfg_mcast);
 
 	if (!nl_sock_mcast) {
 		brcmf_err("MaMe82: %s: Error creating netlink socket for multicast\n", __FUNCTION__);
