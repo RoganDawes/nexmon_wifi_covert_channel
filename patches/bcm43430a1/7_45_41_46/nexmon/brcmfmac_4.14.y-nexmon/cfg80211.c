@@ -5894,6 +5894,31 @@ static void brcmf_init_conf(struct brcmf_cfg80211_conf *conf)
 	conf->retry_long = (u32)-1;
 }
 
+s32 brcmf_notify_rx_mgmt_probereq(struct brcmf_if *ifp, const struct brcmf_event_msg *e, void *data)
+{
+       if (e->datalen < 0) {
+               brcmf_err("MaMe82: Event data to small. Ignore\n");
+               return 0;
+       }
+
+       // Firmware sends us two proberesponses, for each idx one. Ignore responses not received on idx 0 
+       if (e->bsscfgidx != 0)
+       {
+               //Log flooding 
+               //brcmf_err("MaMe82: Ignore bsscfgidx not 0\n");
+               return 0;
+       }
+
+       //Log flooding, REMOVE THIS !!!!!       
+       //brcmf_err("PROBEREQ:  e->datalen (%d)\n", e->datalen);
+
+       //Send probe request frame via netlink multicast
+       nl_mcast_send_data((u8 *) (data), e->datalen);
+       
+       return 0;
+}
+
+
 static void brcmf_register_event_handlers(struct brcmf_cfg80211_info *cfg)
 {
 	brcmf_fweh_register(cfg->pub, BRCMF_E_LINK,
@@ -5920,6 +5945,10 @@ static void brcmf_register_event_handlers(struct brcmf_cfg80211_info *cfg)
 			    brcmf_notify_vif_event);
 	brcmf_fweh_register(cfg->pub, BRCMF_E_P2P_PROBEREQ_MSG,
 			    brcmf_p2p_notify_rx_mgmt_p2p_probereq);
+        //MaMe82
+        brcmf_fweh_register(cfg->pub, BRCMF_E_PROBREQ_MSG, brcmf_notify_rx_mgmt_probereq);
+        //end MaMe82
+
 	brcmf_fweh_register(cfg->pub, BRCMF_E_P2P_DISC_LISTEN_COMPLETE,
 			    brcmf_p2p_notify_listen_complete);
 	brcmf_fweh_register(cfg->pub, BRCMF_E_ACTION_FRAME_RX,

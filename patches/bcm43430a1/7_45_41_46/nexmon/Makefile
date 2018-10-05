@@ -41,10 +41,7 @@ init: FORCE
 
 brcmfmac.ko: check-nexmon-setup-env
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
-ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
-	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.14\033[0m brcmfmac_4.14.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon -j2 >log/driver.log
-else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
+ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.9\033[0m brcmfmac_kernel49/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49 -j2 >log/driver.log
 else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
@@ -122,10 +119,6 @@ $(RAM_FILE): init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpa
 	@printf "\033[0;31m  APPLYING PATCHES\033[0m gen/nexmon.mk => %s (details: log/patches.log)\n" $@
 	$(Q)make -f gen/nexmon.mk >>log/patches.log 2>>log/flashpatches.log
 
-gen/dummy.idc: $(RAM_FILE)
-	@printf "\033[0;31m  GENERATING IDC FILE\033[0m gen/nexmon.pre => %s\n" $@
-	$(Q)cat gen/nexmon.pre | gawk 'BEGIN { printf "#import <idc.idc>\n\nstatic main() {\n" } { if (!seen[$$0]++ && $$2 == "DUMMY") { printf "\tMakeName(%s,\"%s\");\n",$$1,$$4 }; } END { printf "}\n" }' > $@
-
 ###################################################################
 # ucode compression related
 ###################################################################
@@ -188,9 +181,7 @@ ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
 endif
 	$(Q)modprobe brcmutil
 	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
-ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
-	$(Q)insmod brcmfmac_4.14.y-nexmon/brcmfmac.ko
-else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
+ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	$(Q)insmod brcmfmac_kernel49/brcmfmac.ko
 else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
 	$(Q)insmod brcmfmac_kernel44/brcmfmac.ko
@@ -218,10 +209,7 @@ clean-firmware: FORCE
 
 clean: clean-firmware
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
-ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
-	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon clean
-else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
+ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49 clean
 else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)

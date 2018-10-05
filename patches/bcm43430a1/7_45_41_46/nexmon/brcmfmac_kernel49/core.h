@@ -219,5 +219,6 @@ void brcmf_net_setcarrier(struct brcmf_if *ifp, bool on);
 void brcmf_c_set_joinpref_default(struct brcmf_if *ifp);
 int __init brcmf_core_init(void);
 void __exit brcmf_core_exit(void);
+void nl_mcast_send_data(u8 *data, u32 len);
 
 #endif /* BRCMFMAC_CORE_H */

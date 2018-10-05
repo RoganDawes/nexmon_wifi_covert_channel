@@ -65,6 +65,11 @@ static struct netlink_kernel_cfg cfg = {0};
 static struct sock *nl_sock = NULL;
 static struct net_device *ndev_global = NULL;
 
+/* MaMe82 */
+static struct netlink_kernel_cfg nl_cfg_mcast = {0};
+static struct sock *nl_sock_mcast = NULL;
+
+
 struct nexudp_header {
     char nex[3];
     char type;
@@ -1298,6 +1303,39 @@ static void brcmf_driver_register(struct work_struct *work)
 }
 static DECLARE_WORK(brcmf_driver_work, brcmf_driver_register);
 
+#define MCAST_GROUP 21
+void nl_mcast_send_data(u8 *data, u32 len)
+{
+	struct sk_buff *skb;
+    struct nlmsghdr *nlh;
+ //   int res;
+
+    
+    skb = nlmsg_new(NLMSG_ALIGN(len + 1), GFP_KERNEL);
+    if (!skb) {
+        brcmf_err("MaMe82: Allocating space for netlink message failed\n");
+        return;
+    }
+
+    nlh = nlmsg_put(skb, 0, 1, NLMSG_DONE, len + 1, 0);
+    memcpy(nlmsg_data(nlh), data, len);
+
+    
+	nlmsg_multicast(nl_sock_mcast, skb, 0, MCAST_GROUP, GFP_KERNEL);
+	
+	//res -3 means the message wasn't delivered (no listener)
+	
+ //   res = nlmsg_multicast(nl_sock_mcast, skb, 0, MCAST_GROUP, GFP_KERNEL);
+ //   if (res < 0)
+ //       brcmf_err("nlmsg_multicast() error: %d\n", res);
+ //   else
+ //       brcmf_err("nlmsg_multicast() Success.\n");
+
+	
+	
+	return;
+}
+
 int __init brcmf_core_init(void)
 {
     /* NEXMON procfs */
@@ -1308,12 +1346,23 @@ int __init brcmf_core_init(void)
 
     /* NEXMON netlink init */
     cfg.input = nexmon_nl_ioctl_handler;
+	//Netlink socket for receiving input from userspace
     nl_sock = netlink_kernel_create(&init_net, NETLINK_USER, &cfg);
     if (!nl_sock) {
         brcmf_err("NEXMON: %s: Error creating netlink socket\n", __FUNCTION__);
         return -1;
     }
 
+	/* MaMe82 init multicast netlink socket*/
+	nl_cfg_mcast.flags = NL_CFG_F_NONROOT_RECV;
+	nl_sock_mcast = netlink_kernel_create(&init_net, NETLINK_USERSOCK, &nl_cfg_mcast);
+	//nl_sock_mcast = netlink_kernel_create(&init_net, NETLINK_KOBJECT_UEVENT, &nl_cfg_mcast);
+	
+	if (!nl_sock_mcast) {
+        brcmf_err("MaMe82: %s: Error creating netlink socket for multicast\n", __FUNCTION__);
+        return -1;
+    }
+	
     return 0;
 }
 
@@ -1322,6 +1371,9 @@ void __exit brcmf_core_exit(void)
     /*NEXMON netlink */
     netlink_kernel_release(nl_sock);
 
+	/* MaMe82 */
+	netlink_kernel_release(nl_sock_mcast);
+	
     /*NEXMON procfs*/
     remove_proc_entry("nexmon_consoledump", NULL);
 
