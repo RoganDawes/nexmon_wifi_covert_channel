@@ -41,14 +41,19 @@ init: FORCE
 
 brcmfmac.ko: check-nexmon-setup-env
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
+
 ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.9\033[0m brcmfmac_kernel49/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49 -j2 >log/driver.log
 else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.4\033[0m brcmfmac_kernel44/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel44 -j2 >log/driver.log
+else ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
+	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.14\033[0m brcmfmac_4.14.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon -j2 >log/driver.log
 endif
 else
+	@printf "No matching driver found"
 	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a raspberry pi)
 endif
 
@@ -215,6 +220,9 @@ ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel44 clean
+else ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
+	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon clean
 endif
 endif
 	$(Q)rm -f BUILD_NUMBER
